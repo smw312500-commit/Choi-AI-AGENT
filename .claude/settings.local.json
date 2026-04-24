@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import openpyxl; print\\('openpyxl OK'\\)\")",
+      "Bash(python -c \"import xlrd; print\\('xlrd OK'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(gh auth *)",
+      "Bash(git config *)"
+    ]
+  }
+}

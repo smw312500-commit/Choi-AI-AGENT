@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JUSTEM 전기용량표 Agent</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Malgun Gothic',sans-serif;font-size:12px;background:#e8e8e8;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+/* HEADER */
+#hdr{background:#1a1a2e;color:#fff;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+#hdr h1{font-size:14px;font-weight:700;color:#a0c4ff;white-space:nowrap;}
+#hdr input{background:#2a2a4e;border:1px solid #444;color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;width:220px;}
+#hdr input::placeholder{color:#888;}
+.hdr-btn{background:#2563eb;color:#fff;border:none;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;white-space:nowrap;}
+.hdr-btn:hover{background:#1d4ed8;}
+.hdr-btn.green{background:#16a34a;}
+.hdr-btn.green:hover{background:#15803d;}
+.hdr-btn.gray{background:#4b5563;}
+.hdr-btn.gray:hover{background:#374151;}
+#hdr-right{margin-left:auto;display:flex;gap:6px;align-items:center;}
+/* MAIN */
+#main{display:flex;flex:1;overflow:hidden;}
+/* LEFT PANEL */
+#left{width:360px;flex-shrink:0;background:#f5f5f5;border-right:1px solid #ccc;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;}
+.sec-card{background:#fff;border-radius:6px;border:1px solid #ddd;overflow:hidden;}
+.sec-hdr{padding:7px 10px;font-weight:700;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none;}
+.sec-hdr.gps{background:#002060;color:#fff;}
+.sec-hdr.ups{background:#7030a0;color:#fff;}
+.sec-hdr .toggle{font-size:10px;}
+.sec-body{padding:8px;}
+.setting-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;}
+.setting-row label{font-size:11px;color:#555;width:60px;flex-shrink:0;}
+.setting-row input,.setting-row select{border:1px solid #ccc;border-radius:3px;padding:3px 6px;font-size:11px;background:#fff;}
+.setting-row input[type=number]{width:70px;}
+/* Sub-panel list */
+.sub-list{display:flex;flex-direction:column;gap:4px;margin-top:4px;}
+.sub-item{border:1px solid #ddd;border-radius:4px;overflow:hidden;}
+.sub-hdr{background:#e8f0fe;padding:5px 8px;display:flex;align-items:center;gap:6px;cursor:pointer;}
+.sub-hdr .sub-name{font-weight:600;font-size:11px;flex:1;}
+.sub-hdr .sub-actions{display:flex;gap:4px;}
+.btn-icon{background:none;border:none;cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px;}
+.btn-icon:hover{background:#ddd;}
+.parts-list{padding:4px;}
+.part-row{display:flex;align-items:center;gap:4px;padding:3px 4px;border-radius:3px;cursor:pointer;}
+.part-row:hover{background:#f0f4ff;}
+.part-row .part-desc{flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.part-row .part-a{font-size:10px;color:#2563eb;white-space:nowrap;}
+.part-row .part-warn{font-size:10px;color:#dc2626;}
+.add-part-btn{width:100%;padding:4px;background:#f0f4ff;border:1px dashed #93c5fd;border-radius:3px;cursor:pointer;font-size:11px;color:#2563eb;margin-top:4px;}
+.add-part-btn:hover{background:#dbeafe;}
+.add-sub-btn{width:100%;padding:5px;background:#f5f5f5;border:1px dashed #ccc;border-radius:3px;cursor:pointer;font-size:11px;color:#666;margin-top:6px;}
+.add-sub-btn:hover{background:#ececec;}
+/* MAIN BREAKER SECTION */
+.mb-section{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;padding:6px;margin-bottom:6px;}
+.mb-section .mb-title{font-size:10px;color:#666;margin-bottom:4px;font-weight:600;}
+.mb-fields{display:flex;flex-direction:column;gap:3px;}
+.mb-field{display:flex;align-items:center;gap:4px;}
+.mb-field label{font-size:10px;color:#666;width:70px;flex-shrink:0;}
+.mb-field input{flex:1;border:1px solid #ddd;border-radius:3px;padding:2px 5px;font-size:11px;}
+/* RIGHT PANEL */
+#right{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.tabs{display:flex;gap:0;background:#ddd;border-bottom:2px solid #2563eb;flex-shrink:0;}
+.tab{padding:7px 16px;cursor:pointer;font-size:12px;border:none;background:none;border-top-left-radius:4px;border-top-right-radius:4px;}
+.tab.active{background:#fff;color:#2563eb;font-weight:700;}
+.tab:hover:not(.active){background:#e8e8e8;}
+.tab-content{flex:1;overflow:auto;background:#fff;}
+/* CAPACITY TABLE */
+#tbl-wrap{overflow:auto;padding:10px;}
+table{border-collapse:collapse;font-size:11px;white-space:nowrap;}
+th,td{border:1px solid #aaa;padding:3px 6px;text-align:center;vertical-align:middle;}
+th{background:#d0d0d0;font-weight:700;}
+.row-gps-hdr{background:#002060;color:#fff;font-weight:700;}
+.row-ups-hdr{background:#7030a0;color:#fff;font-weight:700;}
+.row-total{background:#fce4d6;}
+.row-usage{background:#e2efda;}
+.row-imbal{background:#fff2cc;}
+.row-imbal.warn{background:#ffcc00;}
+.row-imbal.danger{background:#ff4444;color:#fff;}
+.row-panel{background:#0070c0;color:#fff;font-weight:700;}
+.row-subpanel{background:#bdd7ee;font-weight:600;}
+.row-part{}
+.row-part:hover{background:#f0f4ff;}
+.cell-breaker-model{background:#ffff00;}
+.cell-warn{background:#ffcc00;}
+.cell-err{background:#ff8888;}
+td.num{text-align:right;}
+td.desc{text-align:left;max-width:180px;overflow:hidden;text-overflow:ellipsis;}
+/* BOM TABLE */
+#bom-wrap{padding:10px;}
+.bom-table{width:100%;border-collapse:collapse;font-size:11px;}
+.bom-table th{background:#002060;color:#fff;padding:5px 8px;border:1px solid #aaa;}
+.bom-table td{padding:4px 8px;border:1px solid #ddd;}
+.bom-table tr:nth-child(even){background:#f9f9f9;}
+/* CHAT */
+#chat-wrap{display:flex;flex-direction:column;height:100%;padding:10px;gap:8px;}
+.chat-apikey{display:flex;gap:6px;align-items:center;}
+.chat-apikey label{font-size:11px;white-space:nowrap;font-weight:600;}
+.chat-apikey input{flex:1;border:1px solid #ccc;border-radius:4px;padding:4px 8px;font-size:11px;}
+.chat-apikey .save-btn{padding:4px 10px;background:#16a34a;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;}
+#chat-messages{flex:1;overflow-y:auto;border:1px solid #ddd;border-radius:6px;padding:10px;background:#fafafa;display:flex;flex-direction:column;gap:8px;min-height:0;}
+.msg{max-width:85%;padding:7px 10px;border-radius:8px;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word;}
+.msg.user{background:#2563eb;color:#fff;align-self:flex-end;border-bottom-right-radius:2px;}
+.msg.assistant{background:#f0f0f0;color:#222;align-self:flex-start;border-bottom-left-radius:2px;}
+.msg.system{background:#fef3c7;color:#92400e;align-self:center;font-size:11px;}
+.chat-input-row{display:flex;gap:6px;}
+.chat-input-row textarea{flex:1;border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:12px;resize:none;font-family:inherit;}
+.chat-input-row button{padding:0 16px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;}
+.chat-input-row button:disabled{background:#93c5fd;cursor:not-allowed;}
+/* MODAL */
+#modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;}
+#modal-bg.show{display:flex;}
+#modal{background:#fff;border-radius:8px;width:620px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+.modal-hdr{background:#002060;color:#fff;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;}
+.modal-hdr h2{font-size:14px;}
+.modal-close{background:none;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;}
+.modal-body{padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;}
+.modal-ftr{padding:10px 16px;border-top:1px solid #ddd;display:flex;justify-content:flex-end;gap:8px;}
+.modal-ftr button{padding:6px 18px;border-radius:4px;border:none;cursor:pointer;font-size:12px;font-family:inherit;}
+.modal-ftr .btn-save{background:#2563eb;color:#fff;}
+.modal-ftr .btn-cancel{background:#e5e7eb;color:#333;}
+.fgroup{display:flex;flex-direction:column;gap:3px;}
+.fgroup label{font-size:11px;font-weight:600;color:#444;}
+.fgroup input,.fgroup select,.fgroup textarea{border:1px solid #ccc;border-radius:4px;padding:5px 8px;font-size:12px;font-family:inherit;}
+.fgroup textarea{resize:vertical;min-height:40px;}
+.frow{display:flex;gap:8px;}
+.frow .fgroup{flex:1;}
+.prod-selector{border:1px solid #ccc;border-radius:4px;overflow:hidden;}
+.prod-filter{padding:6px 8px;border-bottom:1px solid #eee;display:flex;gap:6px;align-items:center;}
+.prod-filter select,.prod-filter input{border:1px solid #ccc;border-radius:3px;padding:3px 6px;font-size:11px;}
+.prod-list{max-height:160px;overflow-y:auto;}
+.prod-item{padding:5px 10px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid #f0f0f0;}
+.prod-item:hover{background:#eff6ff;}
+.prod-item.selected{background:#dbeafe;}
+.prod-item .prod-model{font-weight:600;font-size:11px;flex:1;}
+.prod-item .prod-brand{font-size:10px;color:#666;}
+.prod-item .prod-spec{font-size:10px;color:#2563eb;}
+.auto-result{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:4px;padding:6px 10px;font-size:11px;color:#166534;}
+.auto-result.warn{background:#fefce8;border-color:#fde047;color:#713f12;}
+.field-hint{font-size:10px;color:#888;margin-top:1px;}
+hr.fdiv{border:none;border-top:1px solid #eee;}
+.section-label{font-size:11px;font-weight:700;color:#2563eb;padding:2px 0;}
+/* SUB PANEL NAME EDIT */
+.sub-name-input{border:1px solid #93c5fd;border-radius:3px;padding:1px 4px;font-size:11px;width:100px;}
+/* VALIDATION badges */
+.badge{display:inline-block;padding:1px 5px;border-radius:10px;font-size:9px;font-weight:700;}
+.badge.warn{background:#fde047;color:#713f12;}
+.badge.danger{background:#f87171;color:#fff;}
+.badge.ok{background:#86efac;color:#14532d;}
+/* DB MANAGEMENT */
+#db-wrap{padding:10px;}
+.db-toolbar{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap;}
+.db-tbl{width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap;}
+.db-tbl th{background:#1a1a2e;color:#a0c4ff;padding:5px 8px;border:1px solid #444;text-align:left;position:sticky;top:0;z-index:1;}
+.db-tbl td{padding:4px 8px;border:1px solid #ddd;vertical-align:middle;}
+.db-tbl tr:nth-child(even) td{background:#f9f9f9;}
+.db-tbl tr:hover td{background:#eff6ff;}
+.cat-badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:700;}
+#prod-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:center;justify-content:center;}
+#prod-modal-bg.show{display:flex;}
+#prod-modal{background:#fff;border-radius:8px;width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3);}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <h1>⚡ JUSTEM 전기용량표</h1>
+  <input id="inp-project" placeholder="프로젝트명 입력 (예: 한화 모멘텀 // 파우더CVD)" oninput="state.projectName=this.value;renderTable()">
+  <div id="hdr-right">
+    <button class="hdr-btn gray" onclick="loadFromStorage()">📂 불러오기</button>
+    <button class="hdr-btn green" onclick="saveToStorage()">💾 저장</button>
+    <button class="hdr-btn" onclick="exportXlsx()">📥 xlsx 다운로드</button>
+    <button class="hdr-btn green" onclick="exportProjJSON()">💾 JSON 백업</button>
+    <label class="hdr-btn gray" style="cursor:pointer">📂 JSON 복원<input type="file" accept=".json" style="display:none" onchange="importProjJSON(event)"></label>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+  <!-- LEFT PANEL -->
+  <div id="left">
+    <!-- GPS SECTION -->
+    <div class="sec-card" id="card-gps">
+      <div class="sec-hdr gps" onclick="toggleSection('gps')">
+        <span>GPS 섹션 (3상 전원)</span><span class="toggle" id="tog-gps">▼</span>
+      </div>
+      <div class="sec-body" id="body-gps">
+        <div class="setting-row">
+          <label>전압 (V)</label>
+          <input type="number" id="gps-v" value="208" oninput="state.gps.voltage=+this.value;recalcAll();renderTable()">
+          <label style="width:auto">Phase</label>
+          <select id="gps-ph" onchange="state.gps.phase=+this.value;recalcAll();renderTable()">
+            <option value="3" selected>3Phase</option>
+            <option value="1">1Phase</option>
+          </select>
+        </div>
+        <!-- Main MCCB -->
+        <div class="mb-section">
+          <div class="mb-title">메인 차단기 (MCCB)</div>
+          <div class="mb-fields">
+            <div class="mb-field"><label>DT 태그</label><input id="gps-mb-dt" placeholder="G1.MCCB1" oninput="state.gps.mainBreaker.dt=this.value;renderTable()"></div>
+            <div class="mb-field"><label>모델</label><input id="gps-mb-model" placeholder="ABS53c/50A" oninput="state.gps.mainBreaker.model=this.value;renderTable()"></div>
+            <div class="mb-field"><label>메이커</label><input id="gps-mb-maker" placeholder="LSE" oninput="state.gps.mainBreaker.maker=this.value;renderTable()"></div>
+          </div>
+        </div>
+        <!-- Main MC -->
+        <div class="mb-section">
+          <div class="mb-title">메인 MC</div>
+          <div class="mb-fields">
+            <div class="mb-field"><label>DT 태그</label><input id="gps-mc-dt" placeholder="G1.MC1" oninput="state.gps.mainMC.dt=this.value;renderTable()"></div>
+            <div class="mb-field"><label>모델</label><input id="gps-mc-model" placeholder="MC-22b/DC24V 1a1b" oninput="state.gps.mainMC.model=this.value;renderTable()"></div>
+            <div class="mb-field"><label>메이커</label><input id="gps-mc-maker" placeholder="LGE" oninput="state.gps.mainMC.maker=this.value;renderTable()"></div>
+          </div>
+        </div>
+        <!-- Sub panels -->
+        <div class="sub-list" id="gps-subpanels"></div>
+        <button class="add-sub-btn" onclick="addSubPanel('gps')">+ 서브패널 추가 (MC1st / MC2nd 등)</button>
+      </div>
+    </div>
+
+    <!-- UPS SECTION -->
+    <div class="sec-card" id="card-ups">
+      <div class="sec-hdr ups" onclick="toggleSection('ups')">
+        <span>UPS 섹션 (단상 전원)</span><span class="toggle" id="tog-ups">▼</span>
+      </div>
+      <div class="sec-body" id="body-ups">
+        <div class="setting-row">
+          <label>전압 (V)</label>
+          <input type="number" id="ups-v" value="220" oninput="state.ups.voltage=+this.value;recalcAll();renderTable()">
+          <label style="width:auto">Phase</label>
+          <select id="ups-ph" onchange="state.ups.phase=+this.value;recalcAll();renderTable()">
+            <option value="1" selected>1Phase</option>
+            <option value="3">3Phase</option>
+          </select>
+        </div>
+        <div class="mb-section">
+          <div class="mb-title">메인 차단기 (MCCB/NF)</div>
+          <div class="mb-fields">
+            <div class="mb-field"><label>DT 태그</label><input id="ups-mb-dt" placeholder="U1.MCCB1" oninput="state.ups.mainBreaker.dt=this.value;renderTable()"></div>
+            <div class="mb-field"><label>모델</label><input id="ups-mb-model" placeholder="" oninput="state.ups.mainBreaker.model=this.value;renderTable()"></div>
+            <div class="mb-field"><label>메이커</label><input id="ups-mb-maker" placeholder="LSE" oninput="state.ups.mainBreaker.maker=this.value;renderTable()"></div>
+          </div>
+        </div>
+        <div class="sub-list" id="ups-subpanels"></div>
+        <button class="add-sub-btn" onclick="addSubPanel('ups')">+ 서브패널 추가 (MAIN_PANEL 등)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('table',this)">📊 용량표</button>
+      <button class="tab" onclick="showTab('bom',this)">📋 BOM</button>
+      <button class="tab" onclick="showTab('chat',this)">🤖 AI 채팅</button>
+      <button class="tab" onclick="showTab('db',this)">🗄️ DB 관리</button>
+    </div>
+    <div class="tab-content" id="tab-table">
+      <div id="tbl-wrap"><p style="padding:20px;color:#888;">좌측에서 부하를 추가하면 용량표가 자동으로 생성됩니다.</p></div>
+    </div>
+    <div class="tab-content" id="tab-bom" style="display:none">
+      <div id="bom-wrap"><p style="padding:20px;color:#888;">BOM이 여기에 표시됩니다.</p></div>
+    </div>
+    <div class="tab-content" id="tab-db" style="display:none">
+      <div id="db-wrap">
+        <div class="db-toolbar">
+          <button class="hdr-btn green" onclick="openProdModal(null)">+ 제품 추가</button>
+          <button class="hdr-btn" onclick="exportProdJSON()">📥 DB JSON 백업</button>
+          <label class="hdr-btn gray" style="cursor:pointer">📂 DB JSON 복원<input type="file" accept=".json" style="display:none" onchange="importProdJSON(event)"></label>
+          <button class="hdr-btn gray" onclick="resetProds()">⟳ 기본 DB 초기화</button>
+          <span id="db-count" style="font-size:11px;color:#ccc;margin-left:auto"></span>
+        </div>
+        <div style="overflow:auto;max-height:calc(100vh - 180px);">
+          <table class="db-tbl" id="db-table"></table>
+        </div>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-chat" style="display:none">
+      <div id="chat-wrap">
+        <div class="chat-apikey">
+          <label>Claude API Key</label>
+          <input type="password" id="inp-apikey" placeholder="sk-ant-..." value="">
+          <button class="save-btn" onclick="saveApiKey()">저장</button>
+        </div>
+        <div id="chat-messages">
+          <div class="msg system">JUSTEM 전기설계 전용 AI 어시스턴트입니다. API Key를 입력하고 질문해보세요.</div>
+        </div>
+        <div class="chat-input-row">
+          <textarea id="chat-inp" rows="2" placeholder="질문 입력... (예: 이 차단기 선정이 맞나요? / 불평등률 낮추려면?)" onkeydown="chatKeydown(event)"></textarea>
+          <button id="chat-send" onclick="sendChat()">전송</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div id="prod-modal-bg">
+  <div id="prod-modal">
+    <div class="modal-hdr">
+      <h2 id="prod-modal-title">제품 추가</h2>
+      <button class="modal-close" onclick="closeProdModal()">✕</button>
+    </div>
+    <div class="modal-body" id="prod-modal-body"></div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" onclick="closeProdModal()">취소</button>
+      <button class="btn-save" onclick="saveProdModal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- PART MODAL -->
+<div id="modal-bg">
+  <div id="modal">
+    <div class="modal-hdr">
+      <h2 id="modal-title">부하 추가</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body">
+      <!-- dynamically populated -->
+    </div>
+    <div class="modal-ftr">
+      <button class="btn-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-save" onclick="savePart()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PRODUCT DB
+// ============================================================
+let PRODUCTS = [
+  {id:'p01',brand:'LSE',cat:'MCCB',model:'ABS32c/15A',rated_A:15,v:220,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p02',brand:'LSE',cat:'MCCB',model:'ABS32c/20A',rated_A:20,v:220,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p03',brand:'LSE',cat:'MCCB',model:'ABS33c/30A',rated_A:30,v:220,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p04',brand:'LSE',cat:'MCCB',model:'ABS52c/20A',rated_A:20,v:220,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p05',brand:'LSE',cat:'MCCB',model:'ABS52c/50A',rated_A:50,v:220,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p06',brand:'LSE',cat:'MCCB',model:'ABS53c/50A',rated_A:50,v:220,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p07',brand:'LSE',cat:'ELB',model:'EBS32Fb-K/16A',rated_A:16,v:220,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p08',brand:'Honeywell',cat:'CP',model:'GCP-32ANM1A',rated_A:1,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p09',brand:'Honeywell',cat:'CP',model:'GCP-32ANM2A',rated_A:2,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p10',brand:'Honeywell',cat:'CP',model:'GCP-32ANM3A',rated_A:3,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p11',brand:'Honeywell',cat:'CP',model:'GCP-32ANM5A',rated_A:5,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p12',brand:'Honeywell',cat:'CP',model:'GCP-32ANM7A',rated_A:7,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p13',brand:'Honeywell',cat:'CP',model:'GCP-32ANM10A',rated_A:10,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p14',brand:'Honeywell',cat:'CP',model:'GCP-32ANM15A',rated_A:15,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p15',brand:'Honeywell',cat:'CP',model:'GCP-32ANM20A',rated_A:20,v:250,ph:null,ow:null,dv:null,da:null,mul:1.0},
+  {id:'p16',brand:'Weidmuller',cat:'SMPS',model:'PRO ECO 120W 24V 5A',rated_A:1.26,v:208,ph:1,ow:120,dv:24,da:5,mul:1.25},
+  {id:'p17',brand:'Weidmuller',cat:'SMPS',model:'PRO ECO 240W 24V 10A',rated_A:1.23,v:208,ph:1,ow:240,dv:24,da:10,mul:1.25},
+  {id:'p18',brand:'Weidmuller',cat:'SMPS',model:'PRO ECO 480W 24V 20A',rated_A:2.37,v:208,ph:1,ow:480,dv:24,da:20,mul:1.25},
+  {id:'p19',brand:'Weidmuller',cat:'SMPS',model:'PRO ECO 240W 48V 5A',rated_A:1.2,v:208,ph:1,ow:240,dv:48,da:5,mul:1.25},
+  {id:'p20',brand:'Phoenix Contact',cat:'SMPS',model:'UNO2-PS/1AC/24DC/120W',rated_A:1.26,v:208,ph:1,ow:120,dv:24,da:5,mul:1.25},
+  {id:'p21',brand:'Phoenix Contact',cat:'SMPS',model:'UNO2-PS/1AC/24DC/240W',rated_A:1.23,v:208,ph:1,ow:240,dv:24,da:10,mul:1.25},
+  {id:'p22',brand:'Phoenix Contact',cat:'SMPS',model:'UNO2-PS/1AC/24DC/480W',rated_A:2.3,v:208,ph:1,ow:480,dv:24,da:20,mul:1.25},
+  {id:'p23',brand:'SMC',cat:'Chiller',model:'HRS012-A-20-MT',rated_A:5.1,v:208,ph:1,ow:1060,dv:null,da:null,mul:2.5},
+  {id:'p24',brand:'FASTECH',cat:'Motor',model:'EzI-SERVOII-EC-28M-D',rated_A:null,v:null,ph:null,ow:null,dv:24,da:1.45,mul:1.25},
+  {id:'p25',brand:'FASTECH',cat:'Motor',model:'EzI-SERVOII-EC-60L-A',rated_A:null,v:null,ph:null,ow:null,dv:24,da:4.5,mul:1.25},
+  {id:'p26',brand:'Mitsubishi',cat:'PLC',model:'R63P',rated_A:null,v:null,ph:null,ow:50,dv:24,da:2.1,mul:1.25},
+  {id:'p27',brand:'Mitsubishi',cat:'PLC',model:'Q63P',rated_A:null,v:null,ph:null,ow:null,dv:24,da:2.0,mul:1.25},
+  {id:'p28',brand:'Samwon ACT',cat:'Terminal',model:'SV-COM20S',rated_A:null,v:null,ph:null,ow:null,dv:24,da:0.5,mul:1.25},
+  {id:'p29',brand:'Samwon ACT',cat:'Terminal',model:'XTB-COM18T',rated_A:null,v:null,ph:null,ow:null,dv:24,da:0.5,mul:1.25},
+  {id:'p30',brand:'Autonics',cat:'Controller',model:'TC4S-24N',rated_A:null,v:208,ph:1,ow:5,dv:null,da:null,mul:1.25},
+  {id:'p31',brand:'Ulvac',cat:'Pump',model:'MS1200A',rated_A:null,v:208,ph:3,ow:5300,dv:null,da:null,mul:1.5},
+  {id:'p32',brand:'Pilz',cat:'Safety',model:'PNOZ s3 24VDC 2n/o',rated_A:null,v:null,ph:null,ow:2.2,dv:24,da:0.092,mul:1.25},
+  {id:'p33',brand:'Mitsubishi',cat:'HMI',model:'GT2710-STBD',rated_A:null,v:null,ph:null,ow:30,dv:24,da:1.25,mul:1.25},
+  {id:'p34',brand:'Genius',cat:'HMI',model:'GT-800',rated_A:null,v:null,ph:null,ow:null,dv:24,da:0.5,mul:1.25},
+  {id:'p35',brand:'INNOLAS',cat:'Laser',model:'Laser Supply',rated_A:16,v:208,ph:1,ow:3328,dv:null,da:null,mul:1.25},
+  {id:'p36',brand:'INNOLAS',cat:'Cooling',model:'Cool Water',rated_A:8.5,v:208,ph:1,ow:1768,dv:null,da:null,mul:1.25},
+  {id:'p37',brand:'MUTECH',cat:'Optics',model:'LOS C-BOX',rated_A:1.2,v:208,ph:1,ow:249,dv:null,da:null,mul:1.25},
+  {id:'p38',brand:'DAWOO',cat:'LED',model:'DLC-100-2-3500-B03',rated_A:1.0,v:208,ph:1,ow:208,dv:null,da:null,mul:1.25},
+  {id:'p39',brand:'PRESTO',cat:'Motion',model:'SP+EC-04040464NNNDNDNN',rated_A:null,v:null,ph:null,ow:null,dv:24,da:2.0,mul:1.25},
+];
+const BUILT_IN_PRODUCTS_JSON = JSON.stringify(PRODUCTS);
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  projectName: '',
+  gps: {
+    voltage: 208, phase: 3,
+    mainBreaker: {dt:'', model:'ABS53c/50A', maker:'LSE'},
+    mainMC: {dt:'', model:'MC-22b/DC24V 1a1b', maker:'LGE'},
+    subPanels: []
+  },
+  ups: {
+    voltage: 220, phase: 1,
+    mainBreaker: {dt:'', model:'', maker:'LSE'},
+    subPanels: []
+  }
+};
+
+let modalCtx = null; // {mode:'add'|'edit', sectionKey:'gps'|'ups', panelId, partId}
+
+// ============================================================
+// UTILS
+// ============================================================
+function uid() { return Math.random().toString(36).slice(2,10); }
+function pf(phase) { return phase === 3 ? 1.732 : 1.0; }
+function fmt(n, d=2) { return (n==null||isNaN(n)||n===0)?'':n.toFixed(d); }
+function fmtN(n,d=2){return (n==null||isNaN(n))?'':n.toFixed(d);}
+
+// ============================================================
+// CALCULATION ENGINE
+// ============================================================
+function calcPart(p, sectionVoltage, sectionPhase) {
+  const V = p.voltage || sectionVoltage || 208;
+  const ph = p.phase || sectionPhase || 1;
+  const mul = p.multiplier || 1.25;
+  const factor = pf(ph);
+
+  // W calculation
+  let W = 0;
+  if (p.wDirect > 0) {
+    W = p.wDirect;
+  } else if (p.aDirect > 0) {
+    W = V * p.aDirect * factor;
+  }
+
+  // A(Load) = W / V / pf
+  const aLoad = (W > 0 && V > 0) ? W / V / factor : 0;
+
+  // A(차단기) = W * mul / V / pf
+  const aBreaker = (W > 0 && V > 0) ? W * mul / V / factor : 0;
+
+  // Phase distribution
+  const pd = (p.phaseDistrib || '').toUpperCase();
+  const R = pd.includes('R') ? aLoad : 0;
+  const S = pd.includes('S') ? aLoad : 0;
+  const T = pd.includes('T') ? aLoad : 0;
+  const N = pd.includes('N') ? aBreaker : 0;
+
+  return { W, aLoad, aBreaker, R, S, T, N };
+}
+
+function calcSectionTotals(subPanels, sectionVoltage, sectionPhase, sectionMultiplier=1.25) {
+  let totalW=0, totalR=0, totalS=0, totalT=0, totalN=0;
+  for (const sp of subPanels) {
+    for (const p of sp.parts) {
+      const c = calcPart(p, sectionVoltage, sectionPhase);
+      totalW += c.W;
+      totalR += c.R;
+      totalS += c.S;
+      totalT += c.T;
+      totalN += c.N;
+    }
+  }
+  const V = sectionVoltage;
+  const factor = pf(sectionPhase);
+  const aLoad = (totalW > 0 && V > 0) ? totalW / V / factor : 0;
+  const aBreaker = (totalW > 0 && V > 0) ? totalW * sectionMultiplier / V / factor : 0;
+  const realUsage = totalW * 0.5;
+
+  // Imbalance
+  const vals = [totalR, totalS, totalT].filter(x=>x>0);
+  let imbalance = 0;
+  if (vals.length >= 2) {
+    const avg = (totalR + totalS + totalT) / 3;
+    if (avg > 0) imbalance = (Math.max(totalR,totalS,totalT) - Math.min(totalR,totalS,totalT)) / avg;
+  }
+
+  return { totalW, aLoad, aBreaker, totalR, totalS, totalT, totalN, realUsage, imbalance };
+}
+
+function recalcAll() {
+  // Nothing needed - calculations are done inline during render
+  renderLeftPanels();
+  renderTable();
+  renderBOM();
+}
+
+// ============================================================
+// AUTO-SELECTION
+// ============================================================
+function selectBreaker(aBreaker) {
+  if (!aBreaker || aBreaker <= 0) return null;
+  // Try CP first (up to 20A)
+  const cps = PRODUCTS.filter(p => p.cat === 'CP' && p.rated_A >= aBreaker)
+    .sort((a,b) => a.rated_A - b.rated_A);
+  if (cps.length) return cps[0];
+  // Try MCCB
+  const mccbs = PRODUCTS.filter(p => p.cat === 'MCCB' && p.rated_A >= aBreaker)
+    .sort((a,b) => a.rated_A - b.rated_A);
+  if (mccbs.length) return mccbs[0];
+  return null;
+}
+
+function selectSMPS(dcV, dcA) {
+  if (!dcV || !dcA) return null;
+  const reqW = dcV * dcA;
+  const matches = PRODUCTS.filter(p =>
+    p.cat === 'SMPS' &&
+    p.dv === dcV &&
+    p.da >= dcA &&
+    p.ow >= reqW
+  ).sort((a,b) => a.ow - b.ow);
+  return matches[0] || null;
+}
+
+// ============================================================
+// LEFT PANEL RENDERING
+// ============================================================
+function renderLeftPanels() {
+  renderSubPanels('gps');
+  renderSubPanels('ups');
+}
+
+function renderSubPanels(key) {
+  const sec = state[key];
+  const container = document.getElementById(`${key}-subpanels`);
+  if (!container) return;
+  container.innerHTML = '';
+  for (const sp of sec.subPanels) {
+    const div = document.createElement('div');
+    div.className = 'sub-item';
+    const totals = calcSubPanelTotals(sp, sec.voltage, sec.phase);
+    div.innerHTML = `
+      <div class="sub-hdr" onclick="toggleSubPanel('${key}','${sp.id}')">
+        <span class="sub-name">${escHtml(sp.name)}</span>
+        <small style="color:#555;font-size:10px;margin-left:4px;">W:${fmt(totals.W)} A(Load):${fmt(totals.aLoad)}</small>
+        <div class="sub-actions">
+          <button class="btn-icon" title="서브패널 이름 변경" onclick="event.stopPropagation();renameSubPanel('${key}','${sp.id}')">✏️</button>
+          <button class="btn-icon" title="삭제" onclick="event.stopPropagation();deleteSubPanel('${key}','${sp.id}')">🗑️</button>
+        </div>
+      </div>
+      <div class="parts-list" id="parts-${key}-${sp.id}">
+        ${sp.parts.map(p => renderPartRow(p, key, sp.id)).join('')}
+        <button class="add-part-btn" onclick="openModal('add','${key}','${sp.id}',null)">+ 부하 추가</button>
+      </div>`;
+    container.appendChild(div);
+  }
+}
+
+function calcSubPanelTotals(sp, V, ph) {
+  let W=0, aLoad=0;
+  for (const p of sp.parts) {
+    const c = calcPart(p, V, ph);
+    W += c.W;
+    aLoad += c.aLoad;
+  }
+  return {W, aLoad};
+}
+
+function renderPartRow(p, key, panelId) {
+  const sec = state[key];
+  const c = calcPart(p, sec.voltage, sec.phase);
+  const warns = getPartWarnings(p, c);
+  return `<div class="part-row" onclick="openModal('edit','${key}','${panelId}','${p.id}')">
+    <span class="part-desc" title="${escHtml(p.description)}">${escHtml(p.description)||'(이름 없음)'}</span>
+    <span class="part-a">${c.aLoad>0?fmt(c.aLoad)+'A':''}</span>
+    ${warns.length?`<span class="part-warn" title="${warns.join(', ')}">⚠</span>`:''}
+  </div>`;
+}
+
+function getPartWarnings(p, c) {
+  const w = [];
+  if (!p.voltage) w.push('전압 미입력');
+  if (!p.aDirect && !p.wDirect) w.push('전류/전력 미입력');
+  return w;
+}
+
+function toggleSubPanel(key, panelId) {
+  const el = document.getElementById(`parts-${key}-${panelId}`);
+  if (el) el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+
+function renameSubPanel(key, panelId) {
+  const sp = state[key].subPanels.find(s=>s.id===panelId);
+  if (!sp) return;
+  const name = prompt('서브패널 이름:', sp.name);
+  if (name !== null) { sp.name = name; renderLeftPanels(); renderTable(); }
+}
+
+function deleteSubPanel(key, panelId) {
+  const sec = state[key];
+  const sp = sec.subPanels.find(s=>s.id===panelId);
+  if (!sp) return;
+  if (sp.parts.length > 0 && !confirm(`"${sp.name}"에 ${sp.parts.length}개 부하가 있습니다. 삭제할까요?`)) return;
+  sec.subPanels = sec.subPanels.filter(s=>s.id!==panelId);
+  renderLeftPanels(); renderTable(); renderBOM();
+}
+
+function addSubPanel(key) {
+  const names = {gps:['MC1st','MC2nd','MC3rd'], ups:['MAIN_PANEL','SUB_PANEL']};
+  const existing = state[key].subPanels.map(s=>s.name);
+  const suggested = (names[key]||[]).find(n=>!existing.includes(n)) || 'NEW_PANEL';
+  const name = prompt('서브패널 이름:', suggested);
+  if (!name) return;
+  state[key].subPanels.push({id:uid(), name, parts:[]});
+  renderLeftPanels(); renderTable();
+}
+
+function toggleSection(key) {
+  const body = document.getElementById(`body-${key}`);
+  const tog = document.getElementById(`tog-${key}`);
+  if (!body) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  tog.textContent = hidden ? '▼' : '▶';
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(mode, sectionKey, panelId, partId) {
+  modalCtx = {mode, sectionKey, panelId, partId};
+  const sec = state[sectionKey];
+  const sp = sec.subPanels.find(s=>s.id===panelId);
+  let part = null;
+  if (mode === 'edit' && partId) {
+    part = sp.parts.find(p=>p.id===partId);
+  }
+  if (!part) {
+    part = {
+      id: uid(),
+      description: '', breakerDT: '', breakerModel: '', breakerMaker: '',
+      controllerDT: '', controllerModel: '', controllerMaker: '',
+      loadDT: '', loadModel: '', loadMaker: '',
+      note: '', voltage: sec.voltage, phase: sec.phase,
+      multiplier: 1.25, phaseDistrib: 'RS', wDirect: 0, aDirect: 0,
+      isDC: false, dcV: 24, dcA: 0
+    };
+  }
+  modalCtx.part = JSON.parse(JSON.stringify(part));
+
+  document.getElementById('modal-title').textContent = mode==='add' ? `부하 추가 — ${sp.name}` : `부하 편집 — ${sp.name}`;
+  renderModalBody();
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.remove('show');
+  modalCtx = null;
+}
+
+function renderModalBody() {
+  const p = modalCtx.part;
+  const sec = state[modalCtx.sectionKey];
+  const c = calcPart(p, sec.voltage, sec.phase);
+
+  // Auto-selected breaker preview
+  const autoBreaker = selectBreaker(c.aBreaker);
+  const autoSMPS = p.isDC ? selectSMPS(p.dcV, p.dcA) : null;
+
+  const categories = [...new Set(PRODUCTS.filter(pr=>!['CP','MCCB','ELB','SMPS'].includes(pr.cat)).map(pr=>pr.cat))].sort();
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="fgroup">
+      <label>DESCRIPTION (용도명) *</label>
+      <input id="m-desc" value="${escAttr(p.description)}" placeholder="예: PLC Power, Dry pump" oninput="mp('description',this.value)">
+    </div>
+
+    <hr class="fdiv">
+    <div class="section-label">⚡ 전원 설정</div>
+    <div class="frow">
+      <div class="fgroup">
+        <label>전압 V *</label>
+        <input id="m-v" type="number" value="${p.voltage||sec.voltage}" oninput="mp('voltage',+this.value);refreshModalCalc()">
+      </div>
+      <div class="fgroup">
+        <label>Phase *</label>
+        <select id="m-ph" onchange="mp('phase',+this.value);refreshModalCalc()">
+          <option value="1" ${(p.phase||1)==1?'selected':''}>1Phase</option>
+          <option value="3" ${(p.phase||1)==3?'selected':''}>3Phase</option>
+        </select>
+      </div>
+      <div class="fgroup">
+        <label>Multiplier *</label>
+        <select id="m-mul" onchange="mp('multiplier',+this.value);refreshModalCalc()">
+          <option value="1.25" ${p.multiplier==1.25?'selected':''}>1.25 (일반)</option>
+          <option value="2.5" ${p.multiplier==2.5?'selected':''}>2.5 (모터/칠러)</option>
+          <option value="1.5" ${p.multiplier==1.5?'selected':''}>1.5 (펌프)</option>
+          <option value="1.0" ${p.multiplier==1.0?'selected':''}>1.0 (합계용)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="frow">
+      <div class="fgroup">
+        <label>전류 A (직접입력)</label>
+        <input id="m-a" type="number" step="0.01" value="${p.aDirect||''}" placeholder="예: 1.26" oninput="mp('aDirect',parseFloat(this.value)||0);refreshModalCalc()">
+        <div class="field-hint">A 입력시 W는 자동계산 (V×A×√3)</div>
+      </div>
+      <div class="fgroup">
+        <label>전력 W (직접입력)</label>
+        <input id="m-w" type="number" step="1" value="${p.wDirect||''}" placeholder="예: 5300" oninput="mp('wDirect',parseFloat(this.value)||0);refreshModalCalc()">
+        <div class="field-hint">W 입력시 우선 적용</div>
+      </div>
+    </div>
+
+    <div class="frow">
+      <div class="fgroup">
+        <label>상분리 *</label>
+        <select id="m-pd" onchange="mp('phaseDistrib',this.value);refreshModalCalc()">
+          ${['RST','RS','ST','RT','R','S','T','RST+N','N'].map(v=>`<option value="${v}" ${p.phaseDistrib===v?'selected':''}>${v}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+
+    <!-- DB에서 부하 선택 -->
+    <hr class="fdiv">
+    <div class="section-label">📦 부하 제품 선택 (DB)</div>
+    <div class="prod-selector">
+      <div class="prod-filter">
+        <select id="m-cat-filter" onchange="filterProdList()">
+          <option value="">전체 카테고리</option>
+          ${categories.map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <input id="m-prod-search" placeholder="모델명 검색..." oninput="filterProdList()" style="flex:1">
+      </div>
+      <div class="prod-list" id="m-prod-list">
+        ${renderProdList(p.loadModel)}
+      </div>
+    </div>
+
+    <!-- DC Load SMPS -->
+    <div class="frow">
+      <div class="fgroup">
+        <label><input type="checkbox" id="m-isdc" ${p.isDC?'checked':''} onchange="mp('isDC',this.checked);refreshModalCalc()"> DC 부하 (SMPS 경유)</label>
+      </div>
+    </div>
+    <div id="m-dc-fields" style="${p.isDC?'':'display:none'}">
+      <div class="frow">
+        <div class="fgroup"><label>DC 전압</label>
+          <select id="m-dcv" onchange="mp('dcV',+this.value);refreshModalCalc()">
+            <option value="24" ${p.dcV==24?'selected':''}>24V</option>
+            <option value="48" ${p.dcV==48?'selected':''}>48V</option>
+          </select>
+        </div>
+        <div class="fgroup"><label>DC 전류 (A)</label>
+          <input id="m-dca" type="number" step="0.1" value="${p.dcA||''}" placeholder="예: 5" oninput="mp('dcA',parseFloat(this.value)||0);refreshModalCalc()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto results -->
+    <div id="m-auto-result"></div>
+
+    <hr class="fdiv">
+    <div class="section-label">🏷️ DT 태그 & 제품 정보</div>
+    <div class="frow">
+      <div class="fgroup">
+        <label>Breaker DT</label>
+        <input id="m-bdt" value="${escAttr(p.breakerDT)}" placeholder="예: G1.CP1" oninput="mp('breakerDT',this.value)">
+      </div>
+      <div class="fgroup">
+        <label>Breaker 모델 (자동→수동)</label>
+        <input id="m-bmodel" value="${escAttr(p.breakerModel)}" placeholder="자동선정됨" oninput="mp('breakerModel',this.value)">
+      </div>
+      <div class="fgroup">
+        <label>Breaker 메이커</label>
+        <input id="m-bmaker" value="${escAttr(p.breakerMaker)}" placeholder="" oninput="mp('breakerMaker',this.value)">
+      </div>
+    </div>
+    <div class="frow" id="m-ctrl-row">
+      <div class="fgroup">
+        <label>Controller DT</label>
+        <input id="m-cdt" value="${escAttr(p.controllerDT)}" placeholder="예: G1.SMPS1" oninput="mp('controllerDT',this.value)">
+      </div>
+      <div class="fgroup">
+        <label>Controller 모델 (SMPS 등)</label>
+        <input id="m-cmodel" value="${escAttr(p.controllerModel)}" placeholder="자동선정됨 (DC시)" oninput="mp('controllerModel',this.value)">
+      </div>
+      <div class="fgroup">
+        <label>Controller 메이커</label>
+        <input id="m-cmaker" value="${escAttr(p.controllerMaker)}" placeholder="" oninput="mp('controllerMaker',this.value)">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fgroup">
+        <label>Load DT</label>
+        <input id="m-ldt" value="${escAttr(p.loadDT)}" placeholder="예: G1.DP11" oninput="mp('loadDT',this.value)">
+      </div>
+      <div class="fgroup">
+        <label>Load 모델</label>
+        <input id="m-lmodel" value="${escAttr(p.loadModel)}" placeholder="" oninput="mp('loadModel',this.value)">
+      </div>
+      <div class="fgroup">
+        <label>Load 메이커</label>
+        <input id="m-lmaker" value="${escAttr(p.loadMaker)}" placeholder="" oninput="mp('loadMaker',this.value)">
+      </div>
+    </div>
+    <div class="fgroup">
+      <label>NOTE</label>
+      <textarea id="m-note" oninput="mp('note',this.value)">${escHtml(p.note)}</textarea>
+    </div>
+
+    ${modalCtx.mode==='edit'?`<hr class="fdiv"><button onclick="deletePart()" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:11px;color:#991b1b;">🗑️ 이 부하 삭제</button>`:''}
+  `;
+
+  // Show/hide DC fields
+  document.getElementById('m-isdc').addEventListener('change', function() {
+    document.getElementById('m-dc-fields').style.display = this.checked ? '' : 'none';
+  });
+
+  refreshModalCalc();
+}
+
+function renderProdList(selectedModel) {
+  const cat = (document.getElementById('m-cat-filter')||{}).value || '';
+  const search = ((document.getElementById('m-prod-search')||{}).value || '').toLowerCase();
+  const filtered = PRODUCTS.filter(p =>
+    !['CP','MCCB','ELB','SMPS'].includes(p.cat) &&
+    (!cat || p.cat === cat) &&
+    (!search || p.model.toLowerCase().includes(search) || p.brand.toLowerCase().includes(search))
+  );
+  if (!filtered.length) return '<div style="padding:8px;color:#888;font-size:11px;">검색 결과 없음</div>';
+  return filtered.map(p => {
+    const spec = p.rated_A ? `AC ${p.v}V ${p.rated_A}A` : (p.da ? `DC${p.dv}V ${p.da}A` : (p.ow?`${p.ow}W`:''));
+    return `<div class="prod-item ${p.model===selectedModel?'selected':''}" onclick="selectProd('${p.id}')">
+      <span class="prod-model">${escHtml(p.model)}</span>
+      <span class="prod-brand">${escHtml(p.brand)}</span>
+      <span class="prod-spec">${spec}</span>
+    </div>`;
+  }).join('');
+}
+
+function filterProdList() {
+  const el = document.getElementById('m-prod-list');
+  if (el) el.innerHTML = renderProdList(modalCtx.part.loadModel);
+}
+
+function selectProd(prodId) {
+  const prod = PRODUCTS.find(p=>p.id===prodId);
+  if (!prod || !modalCtx) return;
+  const p = modalCtx.part;
+  p.loadModel = prod.model;
+  p.loadMaker = prod.brand;
+
+  // Apply electrical specs
+  if (prod.v && prod.ph) {
+    p.voltage = prod.v;
+    p.phase = prod.ph;
+    p.multiplier = prod.mul || 1.25;
+  }
+  if (prod.rated_A) {
+    p.aDirect = prod.rated_A;
+    p.isDC = false;
+  } else if (prod.da && prod.dv) {
+    // DC load
+    p.isDC = true;
+    p.dcV = prod.dv;
+    p.dcA = prod.da;
+    p.aDirect = 0;
+    // Voltage should be section voltage for SMPS
+    const sec = state[modalCtx.sectionKey];
+    p.voltage = sec.voltage;
+    p.phase = 1; // SMPS is always 1-phase AC input
+    p.multiplier = prod.mul || 1.25;
+  }
+  if (prod.ow && !prod.da) {
+    // AC load with wattage
+    p.wDirect = prod.ow;
+    p.aDirect = 0;
+  }
+
+  renderModalBody();
+}
+
+function mp(field, value) {
+  if (!modalCtx) return;
+  modalCtx.part[field] = value;
+}
+
+function refreshModalCalc() {
+  if (!modalCtx) return;
+  const p = modalCtx.part;
+  const sec = state[modalCtx.sectionKey];
+
+  // If DC, use SMPS's AC current
+  let effectivePart = {...p};
+  let autoSMPS = null;
+  if (p.isDC && p.dcA > 0) {
+    autoSMPS = selectSMPS(p.dcV, p.dcA);
+    if (autoSMPS) {
+      effectivePart.aDirect = autoSMPS.rated_A;
+      effectivePart.wDirect = 0;
+      effectivePart.voltage = sec.voltage;
+      effectivePart.phase = 1;
+    }
+  }
+
+  const c = calcPart(effectivePart, sec.voltage, sec.phase);
+  const autoBreaker = selectBreaker(c.aBreaker);
+
+  // Update breaker model if not manually overridden or empty
+  const bModelInput = document.getElementById('m-bmodel');
+  if (autoBreaker && bModelInput && !bModelInput._manuallyEdited) {
+    bModelInput.placeholder = `${autoBreaker.model} (${autoBreaker.brand}) ← 자동선정`;
+  }
+
+  // Update auto result display
+  const resultEl = document.getElementById('m-auto-result');
+  if (!resultEl) return;
+
+  let html = '<div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">';
+  if (c.W > 0 || c.aLoad > 0) {
+    html += `<div class="auto-result">
+      📊 계산결과: W = <b>${fmt(c.W)}</b> W &nbsp;|&nbsp; A(Load) = <b>${fmt(c.aLoad)}</b> A &nbsp;|&nbsp; A(차단기) = <b>${fmt(c.aBreaker)}</b> A
+      &nbsp;|&nbsp; R:${fmt(c.R)} S:${fmt(c.S)} T:${fmt(c.T)} N:${fmt(c.N)}
+    </div>`;
+  }
+  if (autoBreaker) {
+    html += `<div class="auto-result">🔌 자동 선정 차단기: <b>${autoBreaker.model}</b> (${autoBreaker.brand}) ${autoBreaker.rated_A}A</div>`;
+  } else if (c.aBreaker > 0) {
+    html += `<div class="auto-result warn">⚠️ A(차단기)=${fmt(c.aBreaker)}A — DB에 적합한 차단기 없음, 직접 입력 필요</div>`;
+  }
+  if (autoSMPS) {
+    html += `<div class="auto-result">⚡ 자동 선정 SMPS: <b>${autoSMPS.model}</b> (${autoSMPS.brand}) DC${autoSMPS.dv}V/${autoSMPS.da}A → AC ${autoSMPS.rated_A}A</div>`;
+  } else if (p.isDC && p.dcA > 0) {
+    html += `<div class="auto-result warn">⚠️ DC${p.dcV}V ${p.dcA}A에 맞는 SMPS가 DB에 없습니다</div>`;
+  }
+  html += '</div>';
+  resultEl.innerHTML = html;
+}
+
+function savePart() {
+  if (!modalCtx) return;
+  const p = modalCtx.part;
+  const sec = state[modalCtx.sectionKey];
+  const sp = sec.subPanels.find(s=>s.id===modalCtx.panelId);
+  if (!sp) return;
+
+  // Apply auto-selections if fields empty
+  const effPart = {...p};
+  if (p.isDC && p.dcA > 0) {
+    const smps = selectSMPS(p.dcV, p.dcA);
+    if (smps) {
+      if (!p.controllerModel) effPart.controllerModel = smps.model;
+      if (!p.controllerMaker) effPart.controllerMaker = smps.brand;
+      effPart.aDirect = smps.rated_A;
+      effPart.wDirect = 0;
+      effPart.voltage = sec.voltage;
+      effPart.phase = 1;
+    }
+  }
+  const c = calcPart(effPart, sec.voltage, sec.phase);
+  if (!p.breakerModel) {
+    const br = selectBreaker(c.aBreaker);
+    if (br) { effPart.breakerModel = br.model; effPart.breakerMaker = br.brand; }
+  }
+
+  if (modalCtx.mode === 'add') {
+    sp.parts.push(effPart);
+  } else {
+    const idx = sp.parts.findIndex(x=>x.id===modalCtx.partId);
+    if (idx >= 0) sp.parts[idx] = effPart;
+  }
+
+  closeModal();
+  renderLeftPanels();
+  renderTable();
+  renderBOM();
+}
+
+function deletePart() {
+  if (!modalCtx || modalCtx.mode !== 'edit') return;
+  const sp = state[modalCtx.sectionKey].subPanels.find(s=>s.id===modalCtx.panelId);
+  if (!sp) return;
+  if (!confirm('이 부하를 삭제할까요?')) return;
+  sp.parts = sp.parts.filter(p=>p.id!==modalCtx.partId);
+  closeModal();
+  renderLeftPanels();
+  renderTable();
+  renderBOM();
+}
+
+// ============================================================
+// TABLE RENDERING
+// ============================================================
+const COL_HEADERS = [
+  'DESCRIPTION','Breaker DT','Breaker model','Breaker maker',
+  'Controller DT','Controller model','Controller maker',
+  'Load DT','Load model','Load maker','NOTE',
+  'V','Phase','Mul','상분리','W(직접)','A(직접)',
+  'W(계산)','A(Load)','A(차단기)','R','S','T','N'
+];
+
+function renderTable() {
+  const wrap = document.getElementById('tbl-wrap');
+  if (!wrap) return;
+
+  let rows = [];
+
+  // Title row
+  if (state.projectName) {
+    rows.push({type:'title', data: state.projectName});
+  }
+  // Header
+  rows.push({type:'header'});
+
+  // GPS SECTION
+  const gps = state.gps;
+  rows.push({type:'section-hdr', label:`GPS ${gps.voltage}V ${gps.phase}Phase`, cls:'row-gps-hdr'});
+  const gpsTotals = calcSectionTotals(gps.subPanels, gps.voltage, gps.phase);
+  rows.push({type:'total', totals: gpsTotals, breaker: gps.mainBreaker, mc: gps.mainMC, V: gps.voltage, ph: gps.phase});
+  rows.push({type:'usage', w: gpsTotals.realUsage});
+  rows.push({type:'imbal', val: gpsTotals.imbalance, R:gpsTotals.totalR, S:gpsTotals.totalS, T:gpsTotals.totalT});
+
+  // GPS sub-panels
+  for (const sp of gps.subPanels) {
+    rows.push({type:'subpanel', label: sp.name, sectionKey:'gps', panelId:sp.id});
+    for (const p of sp.parts) {
+      rows.push({type:'part', part:p, sectionKey:'gps', sectionV:gps.voltage, sectionPh:gps.phase, panelId:sp.id});
+    }
+  }
+
+  // UPS SECTION
+  if (state.ups.subPanels.length > 0 || true) {
+    const ups = state.ups;
+    rows.push({type:'section-hdr', label:`UPS ${ups.voltage}V ${ups.phase}Phase`, cls:'row-ups-hdr'});
+    const upsTotals = calcSectionTotals(ups.subPanels, ups.voltage, ups.phase);
+    rows.push({type:'total', totals: upsTotals, breaker: ups.mainBreaker, mc: {dt:'',model:'',maker:''}, V: ups.voltage, ph: ups.phase});
+    rows.push({type:'usage', w: upsTotals.realUsage});
+    rows.push({type:'imbal', val: upsTotals.imbalance, R:upsTotals.totalR, S:upsTotals.totalS, T:upsTotals.totalT});
+    for (const sp of ups.subPanels) {
+      rows.push({type:'subpanel', label: sp.name, sectionKey:'ups', panelId:sp.id});
+      for (const p of sp.parts) {
+        rows.push({type:'part', part:p, sectionKey:'ups', sectionV:ups.voltage, sectionPh:ups.phase, panelId:sp.id});
+      }
+    }
+  }
+
+  // Build HTML
+  let html = `<table id="cap-table">`;
+  // Colgroup for widths
+  html += `<colgroup>
+    <col style="min-width:160px;max-width:200px"> <!-- DESCRIPTION -->
+    <col style="min-width:80px">  <!-- Breaker DT -->
+    <col style="min-width:130px"> <!-- Breaker model -->
+    <col style="min-width:80px">  <!-- Breaker maker -->
+    <col style="min-width:80px">  <!-- Ctrl DT -->
+    <col style="min-width:150px"> <!-- Ctrl model -->
+    <col style="min-width:100px"> <!-- Ctrl maker -->
+    <col style="min-width:80px">  <!-- Load DT -->
+    <col style="min-width:130px"> <!-- Load model -->
+    <col style="min-width:80px">  <!-- Load maker -->
+    <col style="min-width:120px"> <!-- NOTE -->
+    <col style="min-width:45px">  <!-- V -->
+    <col style="min-width:45px">  <!-- Ph -->
+    <col style="min-width:45px">  <!-- Mul -->
+    <col style="min-width:55px">  <!-- 상분리 -->
+    <col style="min-width:55px">  <!-- W직접 -->
+    <col style="min-width:55px">  <!-- A직접 -->
+    <col style="min-width:65px">  <!-- W계산 -->
+    <col style="min-width:65px">  <!-- A(Load) -->
+    <col style="min-width:65px">  <!-- A(차단기) -->
+    <col style="min-width:50px">  <!-- R -->
+    <col style="min-width:50px">  <!-- S -->
+    <col style="min-width:50px">  <!-- T -->
+    <col style="min-width:50px">  <!-- N -->
+  </colgroup>`;
+
+  for (const row of rows) {
+    html += buildTableRow(row);
+  }
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
+function buildTableRow(row) {
+  const NC = COL_HEADERS.length;
+  if (row.type === 'title') {
+    return `<tr><td colspan="${NC}" style="text-align:left;font-weight:700;font-size:13px;background:#f0f0f0;padding:6px 10px;">${escHtml(row.data)}</td></tr>`;
+  }
+  if (row.type === 'header') {
+    return `<tr>${COL_HEADERS.map(h=>`<th>${h}</th>`).join('')}</tr>`;
+  }
+  if (row.type === 'section-hdr') {
+    return `<tr class="${row.cls}"><td colspan="${NC}" style="text-align:left;padding:5px 10px;font-size:12px;">${escHtml(row.label)}</td></tr>`;
+  }
+  if (row.type === 'total') {
+    const t = row.totals;
+    const aLoad = fmtN(t.aLoad);
+    const aBrk = fmtN(t.aBreaker);
+    return `<tr class="row-total">
+      <td class="desc"><b>TATAL</b></td>
+      <td>${escHtml(row.breaker.dt)}</td>
+      <td class="cell-breaker-model">${escHtml(row.breaker.model)}</td>
+      <td>${escHtml(row.breaker.maker)}</td>
+      <td>${escHtml(row.mc.dt)}</td>
+      <td>${escHtml(row.mc.model)}</td>
+      <td>${escHtml(row.mc.maker)}</td>
+      <td></td><td></td><td></td><td></td>
+      <td class="num">${row.V}</td>
+      <td class="num">${row.ph}</td>
+      <td class="num">1.25</td>
+      <td></td><td></td><td></td>
+      <td class="num">${fmtN(t.totalW)}</td>
+      <td class="num">${aLoad}</td>
+      <td class="num">${aBrk}</td>
+      <td class="num">${fmtN(t.totalR)}</td>
+      <td class="num">${fmtN(t.totalS)}</td>
+      <td class="num">${fmtN(t.totalT)}</td>
+      <td class="num">${fmtN(t.totalN)}</td>
+    </tr>`;
+  }
+  if (row.type === 'usage') {
+    return `<tr class="row-usage">
+      <td class="desc" colspan="17">실사용량 (최대전력 × 0.5)</td>
+      <td class="num">${fmtN(row.w)}</td>
+      <td colspan="${NC-18}"></td>
+    </tr>`;
+  }
+  if (row.type === 'imbal') {
+    const pct = (row.val * 100).toFixed(1);
+    const cls = row.val > 0.3 ? 'row-imbal danger' : row.val > 0.1 ? 'row-imbal warn' : 'row-imbal';
+    const flag = row.val > 0.3 ? ' ⚠️ 위험' : row.val > 0.1 ? ' ⚠️ 주의' : row.val > 0 ? ' ✅' : '';
+    return `<tr class="${cls}">
+      <td class="desc" colspan="20">상 전류 불평등률${flag}</td>
+      <td class="num" colspan="3">${row.val>0?pct+'%':''}</td>
+      <td></td>
+    </tr>`;
+  }
+  if (row.type === 'subpanel') {
+    const label = row.label === 'MAIN_PANEL' ? 'MAIN_PANEL' : row.label;
+    const cls = label === 'MAIN_PANEL' ? 'row-panel' : 'row-subpanel';
+    return `<tr class="${cls}"><td colspan="${NC}" style="text-align:left;padding:4px 10px;">${escHtml(label)}</td></tr>`;
+  }
+  if (row.type === 'part') {
+    const p = row.part;
+    const c = calcPart(p, row.sectionV, row.sectionPh);
+    return `<tr class="row-part" onclick="openModal('edit','${row.sectionKey}','${row.panelId}','${p.id}')" style="cursor:pointer">
+      <td class="desc" title="${escAttr(p.description)}">${escHtml(p.description)}</td>
+      <td>${escHtml(p.breakerDT)}</td>
+      <td class="cell-breaker-model">${escHtml(p.breakerModel)}</td>
+      <td>${escHtml(p.breakerMaker)}</td>
+      <td>${escHtml(p.controllerDT)}</td>
+      <td>${escHtml(p.controllerModel)}</td>
+      <td>${escHtml(p.controllerMaker)}</td>
+      <td>${escHtml(p.loadDT)}</td>
+      <td>${escHtml(p.loadModel)}</td>
+      <td>${escHtml(p.loadMaker)}</td>
+      <td title="${escAttr(p.note)}">${p.note?'📝':''}</td>
+      <td class="num">${p.voltage||''}</td>
+      <td class="num">${p.phase||''}</td>
+      <td class="num">${p.multiplier||''}</td>
+      <td>${escHtml(p.phaseDistrib)}</td>
+      <td class="num">${p.wDirect||''}</td>
+      <td class="num">${p.aDirect||''}</td>
+      <td class="num">${fmt(c.W)}</td>
+      <td class="num">${fmt(c.aLoad)}</td>
+      <td class="num">${fmt(c.aBreaker)}</td>
+      <td class="num">${fmt(c.R)}</td>
+      <td class="num">${fmt(c.S)}</td>
+      <td class="num">${fmt(c.T)}</td>
+      <td class="num">${fmt(c.N)}</td>
+    </tr>`;
+  }
+  return '';
+}
+
+// ============================================================
+// BOM RENDERING
+// ============================================================
+function renderBOM() {
+  const wrap = document.getElementById('bom-wrap');
+  if (!wrap) return;
+
+  // Collect all parts
+  const allParts = [];
+  for (const key of ['gps','ups']) {
+    for (const sp of state[key].subPanels) {
+      for (const p of sp.parts) {
+        const sec = state[key];
+        const c = calcPart(p, sec.voltage, sec.phase);
+        allParts.push({...p, section: key.toUpperCase(), panel: sp.name, calc: c});
+      }
+    }
+  }
+
+  if (!allParts.length) {
+    wrap.innerHTML = '<p style="padding:20px;color:#888;">부하를 추가하면 BOM이 생성됩니다.</p>';
+    return;
+  }
+
+  // Group by category for BOM
+  const bomItems = [];
+  const seen = {};
+  for (const p of allParts) {
+    // Breaker
+    if (p.breakerModel) {
+      const key = `BR_${p.breakerModel}_${p.breakerMaker}`;
+      if (!seen[key]) { seen[key]=0; }
+      seen[key]++;
+    }
+    // Controller
+    if (p.controllerModel) {
+      const key = `CT_${p.controllerModel}_${p.controllerMaker}`;
+      if (!seen[key]) { seen[key]=0; }
+      seen[key]++;
+    }
+    // Load
+    if (p.loadModel) {
+      const key = `LD_${p.loadModel}_${p.loadMaker}`;
+      if (!seen[key]) { seen[key]=0; }
+      seen[key]++;
+    }
+  }
+
+  let html = `<table class="bom-table">
+    <tr><th>구분</th><th>DESCRIPTION</th><th>DT 태그</th><th>모델</th><th>메이커</th><th>V</th><th>Ph</th><th>A</th><th>W(계산)</th><th>상분리</th><th>섹션/패널</th></tr>`;
+  for (const p of allParts) {
+    html += `<tr>
+      <td>${p.section}</td>
+      <td>${escHtml(p.description)}</td>
+      <td>${escHtml(p.loadDT||p.breakerDT)}</td>
+      <td>${escHtml(p.loadModel||'')}</td>
+      <td>${escHtml(p.loadMaker||'')}</td>
+      <td>${p.voltage||''}</td>
+      <td>${p.phase||''}</td>
+      <td>${fmt(p.calc.aLoad)}</td>
+      <td>${fmt(p.calc.W)}</td>
+      <td>${escHtml(p.phaseDistrib)}</td>
+      <td>${escHtml(p.panel)}</td>
+    </tr>`;
+  }
+  html += '</table>';
+  wrap.innerHTML = html;
+}
+
+// ============================================================
+// XLSX EXPORT
+// ============================================================
+function exportXlsx() {
+  if (typeof XLSX === 'undefined') { alert('SheetJS 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // ---- 용량표 시트 ----
+  // Build rows following exact column structure: B~AE (cols 2-31)
+  // We use array of arrays, col index 0 = A (empty), 1 = B, etc.
+  const sheetRows = [];
+
+  // Row 1: empty
+  sheetRows.push([]);
+  // Row 2: title
+  const titleRow = new Array(31).fill(null);
+  titleRow[1] = state.projectName || '전기 용량표';
+  sheetRows.push(titleRow);
+  // Row 3: header
+  const hdrRow = new Array(31).fill(null);
+  const hdrMap = {1:'DESCRIPTION',3:'Breaker DT',4:'Breaker model',5:'Breaker maker',
+    7:'Controller DT',8:'Controller model',9:'Controller maker',
+    11:'Load DT',12:'Load model',13:'Load maker',15:'NOTE',
+    17:'V',18:'Phase',19:'Multiplier',20:'상분리','21':'W','22':'A',
+    24:'W',25:'A(Load)',26:'A(차단기)',27:'R',28:'S',29:'T',30:'N'};
+  for (const [i,v] of Object.entries(hdrMap)) hdrRow[+i]=v;
+  sheetRows.push(hdrRow);
+
+  function addSectionRows(secKey) {
+    const sec = state[secKey];
+    const totals = calcSectionTotals(sec.subPanels, sec.voltage, sec.phase);
+
+    // Section header
+    const sHdr = new Array(31).fill(null);
+    sHdr[1] = `${secKey.toUpperCase()} ${sec.voltage}V ${sec.phase}Phase`;
+    sheetRows.push(sHdr);
+
+    // TATAL row
+    const tRow = new Array(31).fill(null);
+    tRow[1]='TATAL';
+    tRow[3]=sec.mainBreaker.dt; tRow[4]=sec.mainBreaker.model; tRow[5]=sec.mainBreaker.maker;
+    if (secKey==='gps') { tRow[7]=sec.mainMC.dt; tRow[8]=sec.mainMC.model; tRow[9]=sec.mainMC.maker; }
+    tRow[17]=sec.voltage; tRow[18]=sec.phase; tRow[19]=1.25;
+    tRow[24]=totals.totalW; tRow[25]=totals.aLoad; tRow[26]=totals.aBreaker;
+    tRow[27]=totals.totalR; tRow[28]=totals.totalS; tRow[29]=totals.totalT; tRow[30]=totals.totalN;
+    sheetRows.push(tRow);
+
+    // 실사용량
+    const uRow = new Array(31).fill(null);
+    uRow[1]='실사용량(최대전력 * 0.5)';
+    uRow[24]=totals.realUsage;
+    sheetRows.push(uRow);
+
+    // 불평등률
+    const iRow = new Array(31).fill(null);
+    iRow[1]='상 전류 불평등률';
+    iRow[26]=totals.imbalance;
+    sheetRows.push(iRow);
+
+    // Sub-panels and parts
+    for (const sp of sec.subPanels) {
+      const spRow = new Array(31).fill(null);
+      spRow[1] = sp.name;
+      sheetRows.push(spRow);
+
+      for (const p of sp.parts) {
+        const c = calcPart(p, sec.voltage, sec.phase);
+        const pRow = new Array(31).fill(null);
+        pRow[1]=p.description||'';
+        pRow[3]=p.breakerDT||''; pRow[4]=p.breakerModel||''; pRow[5]=p.breakerMaker||'';
+        pRow[7]=p.controllerDT||''; pRow[8]=p.controllerModel||''; pRow[9]=p.controllerMaker||'';
+        pRow[11]=p.loadDT||''; pRow[12]=p.loadModel||''; pRow[13]=p.loadMaker||'';
+        pRow[15]=p.note||'';
+        pRow[17]=p.voltage||''; pRow[18]=p.phase||''; pRow[19]=p.multiplier||'';
+        pRow[20]=p.phaseDistrib||'';
+        pRow[21]=p.wDirect||''; pRow[22]=p.aDirect||'';
+        pRow[24]=c.W||0; pRow[25]=c.aLoad||0; pRow[26]=c.aBreaker||0;
+        pRow[27]=c.R||0; pRow[28]=c.S||0; pRow[29]=c.T||0; pRow[30]=c.N||0;
+        sheetRows.push(pRow);
+      }
+    }
+  }
+
+  addSectionRows('gps');
+  addSectionRows('ups');
+
+  const ws = XLSX.utils.aoa_to_sheet(sheetRows);
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:3},{wch:25},{wch:3},{wch:12},{wch:16},{wch:10},{wch:3},
+    {wch:12},{wch:20},{wch:14},{wch:3},{wch:12},{wch:18},{wch:12},{wch:3},
+    {wch:20},{wch:3},{wch:6},{wch:5},{wch:7},{wch:8},{wch:7},{wch:7},{wch:3},
+    {wch:10},{wch:8},{wch:9},{wch:8},{wch:8},{wch:8},{wch:8}
+  ];
+
+  // Apply styles using cell format (XLSX.js doesn't support full styling without pro,
+  // but we can set number formats)
+  const range = XLSX.utils.decode_range(ws['!ref']||'A1:AE1');
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = 24; C <= 30; C++) { // Y~AE: number cols
+      const addr = XLSX.utils.encode_cell({r:R,c:C});
+      if (ws[addr] && typeof ws[addr].v === 'number') {
+        ws[addr].z = '0.000';
+      }
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, '전기용량표');
+
+  // ---- BOM 시트 ----
+  const bomData = [['구분','DESCRIPTION','DT 태그','모델','메이커','V','Phase','A(계산)','W(계산)','상분리','패널']];
+  for (const key of ['gps','ups']) {
+    const sec = state[key];
+    for (const sp of sec.subPanels) {
+      for (const p of sp.parts) {
+        const c = calcPart(p, sec.voltage, sec.phase);
+        bomData.push([key.toUpperCase(), p.description, p.loadDT||p.breakerDT, p.loadModel, p.loadMaker,
+          p.voltage, p.phase, c.aLoad, c.W, p.phaseDistrib, sp.name]);
+      }
+    }
+  }
+  const wsBom = XLSX.utils.aoa_to_sheet(bomData);
+  wsBom['!cols'] = [{wch:5},{wch:22},{wch:12},{wch:20},{wch:14},{wch:5},{wch:5},{wch:8},{wch:8},{wch:7},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsBom, 'BOM');
+
+  const fn = (state.projectName || 'JUSTEM_전기용량표') + '.xlsx';
+  XLSX.writeFile(wb, fn);
+}
+
+// ============================================================
+// CLAUDE API CHAT
+// ============================================================
+let chatHistory = [];
+
+function saveApiKey() {
+  const key = document.getElementById('inp-apikey').value.trim();
+  if (key) { localStorage.setItem('justem_api_key', key); addChatMsg('system','API Key 저장 완료.'); }
+}
+
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chat-inp');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  const apiKey = localStorage.getItem('justem_api_key') || document.getElementById('inp-apikey').value.trim();
+  if (!apiKey) { addChatMsg('system','API Key를 먼저 입력해주세요.'); return; }
+
+  inp.value = '';
+  addChatMsg('user', msg);
+  document.getElementById('chat-send').disabled = true;
+
+  // Build context from current table state
+  const gps = state.gps;
+  const upsSec = state.ups;
+  const gpsTotals = calcSectionTotals(gps.subPanels, gps.voltage, gps.phase);
+  const upsTotals = calcSectionTotals(upsSec.subPanels, upsSec.voltage, upsSec.phase);
+
+  const context = `현재 전기용량표 요약:
+프로젝트: ${state.projectName||'미입력'}
+GPS: ${gps.voltage}V ${gps.phase}Phase | 총 W=${gpsTotals.totalW.toFixed(0)} | A(Load)=${gpsTotals.aLoad.toFixed(2)} | 불평등률=${(gpsTotals.imbalance*100).toFixed(1)}%
+UPS: ${upsSec.voltage}V ${upsSec.phase}Phase | 총 W=${upsTotals.totalW.toFixed(0)} | A(Load)=${upsTotals.aLoad.toFixed(2)}
+GPS 부하: ${gps.subPanels.flatMap(sp=>sp.parts).map(p=>p.description).join(', ')||'없음'}`;
+
+  chatHistory.push({role:'user', content: msg});
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: `당신은 JUSTEM 전기제어 설계 전문 AI입니다. 전기 용량표, 차단기 선정, 불평등률 분석, SMPS 선정 등 전기설계 관련 질문에 답변합니다.\n\n${context}`,
+        messages: chatHistory
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.content[0].text;
+    chatHistory.push({role:'assistant', content: reply});
+    addChatMsg('assistant', reply);
+  } catch(e) {
+    addChatMsg('system', `오류: ${e.message}`);
+    chatHistory.pop();
+  }
+  document.getElementById('chat-send').disabled = false;
+}
+
+function addChatMsg(role, text) {
+  const el = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ============================================================
+// LOCALSTORAGE
+// ============================================================
+function saveToStorage() {
+  localStorage.setItem('justem_state', JSON.stringify(state));
+  alert('저장 완료!');
+}
+
+function loadFromStorage() {
+  const raw = localStorage.getItem('justem_state');
+  if (!raw) { alert('저장된 데이터가 없습니다.'); return; }
+  try {
+    state = JSON.parse(raw);
+    syncInputsFromState();
+    renderLeftPanels();
+    renderTable();
+    renderBOM();
+    alert('불러오기 완료!');
+  } catch(e) { alert('데이터 불러오기 실패: '+e.message); }
+}
+
+function syncInputsFromState() {
+  const set = (id, val) => { const el=document.getElementById(id); if(el) el.value=val||''; };
+  set('inp-project', state.projectName);
+  set('gps-v', state.gps.voltage);
+  document.getElementById('gps-ph').value = state.gps.phase;
+  set('gps-mb-dt',    state.gps.mainBreaker.dt);
+  set('gps-mb-model', state.gps.mainBreaker.model);
+  set('gps-mb-maker', state.gps.mainBreaker.maker);
+  set('gps-mc-dt',    state.gps.mainMC.dt);
+  set('gps-mc-model', state.gps.mainMC.model);
+  set('gps-mc-maker', state.gps.mainMC.maker);
+  set('ups-v', state.ups.voltage);
+  document.getElementById('ups-ph').value = state.ups.phase;
+  set('ups-mb-dt',    state.ups.mainBreaker.dt);
+  set('ups-mb-model', state.ups.mainBreaker.model);
+  set('ups-mb-maker', state.ups.mainBreaker.maker);
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`tab-${id}`).style.display='';
+  if (btn) btn.classList.add('active');
+  if (id==='bom') renderBOM();
+  if (id==='db') renderDB();
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s) {
+  if (!s) return '';
+  return String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ============================================================
+// JSON UTILITY
+// ============================================================
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ============================================================
+// PROJECT JSON BACKUP / RESTORE
+// ============================================================
+function exportProjJSON() {
+  const data = {
+    version: '1.0',
+    exported: new Date().toISOString(),
+    state,
+    products: PRODUCTS
+  };
+  downloadJSON(data, (state.projectName || 'JUSTEM_project') + '.json');
+}
+
+function importProjJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.state) {
+        state = data.state;
+        syncInputsFromState();
+      }
+      if (data.products && Array.isArray(data.products) && data.products.length) {
+        PRODUCTS = data.products;
+        saveProducts();
+      }
+      renderLeftPanels();
+      renderTable();
+      renderBOM();
+      renderDB();
+      alert('JSON 복원 완료!');
+    } catch(err) { alert('JSON 파싱 오류: ' + err.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ============================================================
+// PRODUCT JSON BACKUP / RESTORE
+// ============================================================
+function exportProdJSON() {
+  downloadJSON(PRODUCTS, 'JUSTEM_products_db.json');
+}
+
+function importProdJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const arr = Array.isArray(data) ? data : (data.products || []);
+      if (!arr.length) { alert('제품 데이터가 없습니다.'); return; }
+      PRODUCTS = arr;
+      saveProducts();
+      renderDB();
+      alert(`제품 DB 복원 완료 (${arr.length}개)`);
+    } catch(err) { alert('JSON 파싱 오류: ' + err.message); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function saveProducts() {
+  localStorage.setItem('justem_products', JSON.stringify(PRODUCTS));
+}
+
+function loadProducts() {
+  const raw = localStorage.getItem('justem_products');
+  if (raw) {
+    try { PRODUCTS = JSON.parse(raw); } catch(e) {}
+  }
+}
+
+function resetProds() {
+  if (!confirm('기본 제품 DB로 초기화할까요?\n추가/수정한 제품이 모두 삭제됩니다.')) return;
+  PRODUCTS = JSON.parse(BUILT_IN_PRODUCTS_JSON);
+  saveProducts();
+  renderDB();
+  alert('기본 DB로 초기화 완료.');
+}
+
+// ============================================================
+// DB MANAGEMENT TAB
+// ============================================================
+const CAT_BG = {
+  MCCB:'#fee2e2',CP:'#fef3c7',ELB:'#fde8d8',SMPS:'#d1fae5',
+  Chiller:'#dbeafe',Motor:'#ede9fe',PLC:'#f0fdf4',HMI:'#fdf4ff',
+  Laser:'#fff7ed',Cooling:'#e0f2fe',Pump:'#fef9c3',Terminal:'#f5f5f5',
+  Controller:'#ecfdf5',Safety:'#fef2f2',Motion:'#eff6ff',LED:'#fdf4ff',Other:'#f9fafb'
+};
+
+function renderDB() {
+  const tbl = document.getElementById('db-table');
+  const cnt = document.getElementById('db-count');
+  if (!tbl) return;
+  if (cnt) cnt.textContent = `총 ${PRODUCTS.length}개 제품`;
+
+  let html = `<thead><tr>
+    <th>#</th><th>브랜드</th><th>카테고리</th><th>모델</th>
+    <th>정격A</th><th>V</th><th>Ph</th><th>출력W</th>
+    <th>DC V</th><th>DC A</th><th>Mul</th><th>작업</th>
+  </tr></thead><tbody>`;
+
+  PRODUCTS.forEach((p, i) => {
+    const cat = p.cat || p.category || '';
+    const bg = CAT_BG[cat] || '#fff';
+    html += `<tr>
+      <td>${i+1}</td>
+      <td>${escHtml(p.brand||'')}</td>
+      <td><span class="cat-badge" style="background:${bg};color:#333">${escHtml(cat)}</span></td>
+      <td>${escHtml(p.model||'')}</td>
+      <td class="num">${p.rated_A??''}</td>
+      <td class="num">${p.v??''}</td>
+      <td class="num">${p.ph??''}</td>
+      <td class="num">${p.ow??''}</td>
+      <td class="num">${p.dv??''}</td>
+      <td class="num">${p.da??''}</td>
+      <td class="num">${p.mul??''}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="편집" onclick="openProdModal('${escAttr(p.id||String(i))}')">✏️</button>
+        <button class="btn-icon" title="삭제" onclick="deleteProd('${escAttr(p.id||String(i))}')">🗑️</button>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody>';
+  tbl.innerHTML = html;
+}
+
+let _prodModalId = null;
+
+function openProdModal(idOrIdx) {
+  _prodModalId = idOrIdx;
+  let p = {id:uid(),brand:'',cat:'SMPS',model:'',rated_A:null,v:null,ph:null,ow:null,dv:null,da:null,mul:1.25};
+
+  if (idOrIdx !== null) {
+    const found = PRODUCTS.find(x => x.id === idOrIdx);
+    if (found) {
+      p = {...found};
+    } else {
+      const idx = parseInt(idOrIdx);
+      if (!isNaN(idx) && PRODUCTS[idx]) p = {...PRODUCTS[idx]};
+    }
+  }
+
+  document.getElementById('prod-modal-title').textContent = idOrIdx === null ? '제품 추가' : '제품 편집';
+  const cats = ['MCCB','CP','ELB','SMPS','Chiller','Motor','PLC','HMI','Terminal',
+                'Controller','Laser','Cooling','Pump','Safety','Motion','LED','Other'];
+  const curCat = p.cat || p.category || '';
+
+  document.getElementById('prod-modal-body').innerHTML = `
+    <div class="frow">
+      <div class="fgroup"><label>브랜드</label><input id="pm-brand" value="${escAttr(p.brand||'')}"></div>
+      <div class="fgroup"><label>카테고리</label>
+        <select id="pm-cat">${cats.map(c=>`<option value="${c}"${curCat===c?' selected':''}>${c}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="fgroup"><label>모델명 *</label><input id="pm-model" value="${escAttr(p.model||'')}"></div>
+    <div class="frow">
+      <div class="fgroup"><label>정격전류 A (AC)</label><input type="number" step="0.01" id="pm-ratedA" value="${p.rated_A??''}"></div>
+      <div class="fgroup"><label>전압 V</label><input type="number" id="pm-v" value="${p.v??''}"></div>
+      <div class="fgroup"><label>Phase</label><input type="number" id="pm-ph" value="${p.ph??''}"></div>
+    </div>
+    <div class="frow">
+      <div class="fgroup"><label>출력 W</label><input type="number" id="pm-ow" value="${p.ow??''}"></div>
+      <div class="fgroup"><label>DC 전압 V</label><input type="number" id="pm-dv" value="${p.dv??''}"></div>
+      <div class="fgroup"><label>DC 전류 A</label><input type="number" step="0.01" id="pm-da" value="${p.da??''}"></div>
+    </div>
+    <div class="fgroup"><label>Multiplier (기본 1.25)</label>
+      <input type="number" step="0.01" id="pm-mul" value="${p.mul??1.25}">
+    </div>
+    <input type="hidden" id="pm-id" value="${escAttr(p.id||'')}">
+  `;
+  document.getElementById('prod-modal-bg').classList.add('show');
+}
+
+function closeProdModal() {
+  document.getElementById('prod-modal-bg').classList.remove('show');
+  _prodModalId = null;
+}
+
+function saveProdModal() {
+  const n = v => { const x = parseFloat(v); return isNaN(x) ? null : x; };
+  const s = id => (document.getElementById(id)||{value:''}).value.trim();
+  const p = {
+    id:   s('pm-id') || uid(),
+    brand: s('pm-brand'),
+    cat:   s('pm-cat'),
+    model: s('pm-model'),
+    rated_A: n(s('pm-ratedA')),
+    v:  n(s('pm-v')),
+    ph: n(s('pm-ph')),
+    ow: n(s('pm-ow')),
+    dv: n(s('pm-dv')),
+    da: n(s('pm-da')),
+    mul: n(s('pm-mul')) ?? 1.25,
+  };
+  if (!p.model) { alert('모델명을 입력해주세요.'); return; }
+
+  if (_prodModalId === null) {
+    PRODUCTS.push(p);
+  } else {
+    const idx = PRODUCTS.findIndex(x => x.id === p.id);
+    if (idx >= 0) PRODUCTS[idx] = p;
+    else PRODUCTS.push(p);
+  }
+  saveProducts();
+  renderDB();
+  closeProdModal();
+}
+
+function deleteProd(idOrIdx) {
+  if (!confirm('이 제품을 삭제할까요?')) return;
+  const byId = PRODUCTS.findIndex(x => x.id === idOrIdx);
+  if (byId >= 0) {
+    PRODUCTS.splice(byId, 1);
+  } else {
+    const idx = parseInt(idOrIdx);
+    if (!isNaN(idx) && idx >= 0 && idx < PRODUCTS.length) PRODUCTS.splice(idx, 1);
+  }
+  saveProducts();
+  renderDB();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  loadProducts();
+
+  const apiKey = localStorage.getItem('justem_api_key');
+  if (apiKey) document.getElementById('inp-apikey').value = apiKey;
+
+  // Add default sub-panels
+  state.gps.subPanels = [
+    {id:uid(), name:'MC1st', parts:[]},
+    {id:uid(), name:'MC2nd', parts:[]}
+  ];
+  state.ups.subPanels = [
+    {id:uid(), name:'MAIN_PANEL', parts:[]}
+  ];
+
+  renderLeftPanels();
+  renderTable();
+}
+
+init();
+</script>
+</body>
+</html>
