@@ -1513,7 +1513,9 @@ function exportProjJSON() {
     state,
     products: PRODUCTS
   };
-  downloadJSON(data, (state.projectName || 'JUSTEM_project') + '.json');
+  const d = new Date();
+  const dateStr = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+  downloadJSON(data, (state.projectName || 'JUSTEM_project') + '_' + dateStr + '.json');
 }
 
 function importProjJSON(event) {
