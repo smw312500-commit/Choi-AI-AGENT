@@ -280,7 +280,7 @@ hr.fdiv{border:none;border-top:1px solid #eee;}
       <div id="chat-wrap">
         <div class="chat-apikey">
           <label>Claude API Key</label>
-          <input type="password" id="inp-apikey" placeholder="sk-ant-..." value="">
+          <input type="password" id="inp-apikey" placeholder="sk-..." value="">
           <button class="save-btn" onclick="saveApiKey()">저장</button>
         </div>
         <div id="chat-messages">
@@ -1392,24 +1392,24 @@ GPS 부하: ${gps.subPanels.flatMap(sp=>sp.parts).map(p=>p.description).join(', 
   chatHistory.push({role:'user', content: msg});
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'gpt-4o-mini',
         max_tokens: 1024,
-        system: `당신은 JUSTEM 전기제어 설계 전문 AI입니다. 전기 용량표, 차단기 선정, 불평등률 분석, SMPS 선정 등 전기설계 관련 질문에 답변합니다.\n\n${context}`,
-        messages: chatHistory
+        messages: [
+          {role:'system', content:`당신은 JUSTEM 전기제어 설계 전문 AI입니다. 전기 용량표, 차단기 선정, 불평등률 분석, SMPS 선정 등 전기설계 관련 질문에 답변합니다.\n\n${context}`},
+          ...chatHistory
+        ]
       })
     });
     const data = await resp.json();
     if (data.error) throw new Error(data.error.message);
-    const reply = data.content[0].text;
+    const reply = data.choices[0].message.content;
     chatHistory.push({role:'assistant', content: reply});
     addChatMsg('assistant', reply);
   } catch(e) {
