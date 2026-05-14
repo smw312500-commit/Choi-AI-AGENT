@@ -1,2 +1,5 @@
 /배포 방식.txt
 /한화모멘텀 파우더CVD 전기용량표 20250818.xlsx
+.claude/
+*.txt
+parse_progress.json
