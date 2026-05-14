@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JUSTEM 전기용량표 Agent</title>
+<title>ABC전기 전기용량표 Agent</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -166,8 +166,8 @@ hr.fdiv{border:none;border-top:1px solid #eee;}
 
 <!-- HEADER -->
 <div id="hdr">
-  <h1>⚡ JUSTEM 전기용량표</h1>
-  <input id="inp-project" placeholder="프로젝트명 입력 (예: 한화 모멘텀 // 파우더CVD)" oninput="state.projectName=this.value;renderTable()">
+  <h1>⚡ ABC전기 전기용량표</h1>
+  <input id="inp-project" placeholder="프로젝트명 입력 (예: 삼성 반도체 // 라인3)" oninput="state.projectName=this.value;renderTable()">
   <div id="hdr-right">
     <button class="hdr-btn gray" onclick="loadFromStorage()">📂 불러오기</button>
     <button class="hdr-btn green" onclick="saveToStorage()">💾 저장</button>
@@ -284,7 +284,7 @@ hr.fdiv{border:none;border-top:1px solid #eee;}
           <button class="save-btn" onclick="saveApiKey()">저장</button>
         </div>
         <div id="chat-messages">
-          <div class="msg system">JUSTEM 전기설계 전용 AI 어시스턴트입니다. API Key를 입력하고 질문해보세요.</div>
+          <div class="msg system">ABC전기 전기설계 전용 AI 어시스턴트입니다. API Key를 입력하고 질문해보세요.</div>
         </div>
         <div class="chat-input-row">
           <textarea id="chat-inp" rows="2" placeholder="질문 입력... (예: 이 차단기 선정이 맞나요? / 불평등률 낮추려면?)" onkeydown="chatKeydown(event)"></textarea>
@@ -1348,7 +1348,7 @@ function exportXlsx() {
   wsBom['!cols'] = [{wch:5},{wch:22},{wch:12},{wch:20},{wch:14},{wch:5},{wch:5},{wch:8},{wch:8},{wch:7},{wch:14}];
   XLSX.utils.book_append_sheet(wb, wsBom, 'BOM');
 
-  const fn = (state.projectName || 'JUSTEM_전기용량표') + '.xlsx';
+  const fn = (state.projectName || 'ABC전기_전기용량표') + '.xlsx';
   XLSX.writeFile(wb, fn);
 }
 
@@ -1402,7 +1402,7 @@ GPS 부하: ${gps.subPanels.flatMap(sp=>sp.parts).map(p=>p.description).join(', 
         model: 'gpt-4o-mini',
         max_tokens: 1024,
         messages: [
-          {role:'system', content:`당신은 JUSTEM 전기제어 설계 전문 AI입니다. 전기 용량표, 차단기 선정, 불평등률 분석, SMPS 선정 등 전기설계 관련 질문에 답변합니다.\n\n${context}`},
+          {role:'system', content:`당신은 ABC전기 전기제어 설계 전문 AI입니다. 전기 용량표, 차단기 선정, 불평등률 분석, SMPS 선정 등 전기설계 관련 질문에 답변합니다.\n\n${context}`},
           ...chatHistory
         ]
       })
@@ -1514,7 +1514,7 @@ function exportProjJSON() {
   };
   const d = new Date();
   const dateStr = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
-  downloadJSON(data, (state.projectName || 'JUSTEM_project') + '_' + dateStr + '.json');
+  downloadJSON(data, (state.projectName || 'ABC전기_project') + '_' + dateStr + '.json');
 }
 
 function importProjJSON(event) {
@@ -1547,7 +1547,7 @@ function importProjJSON(event) {
 // PRODUCT JSON BACKUP / RESTORE
 // ============================================================
 function exportProdJSON() {
-  downloadJSON(PRODUCTS, 'JUSTEM_products_db.json');
+  downloadJSON(PRODUCTS, 'ABC전기_products_db.json');
 }
 
 function importProdJSON(event) {
